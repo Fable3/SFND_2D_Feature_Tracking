@@ -98,23 +98,23 @@ AKAZE |  7.77 (3.96) | 7.49 (3.52) | 7.41 (3.50) | 7.48 (3.39) | 7.75 (3.44) | 7
 SIFT |  5.04 (5.96) | 5.09 (6.20) | 4.96 (6.09) | 4.74 (5.28) | 4.72 (5.51) | 4.65 (5.58) | 5.43 (6.53) | 4.63 (5.16) | 5.58 (6.72) | 5.67 (6.72) | 5.06 (6.01)
 
 Shi-Tomasi:
-!(images/shitomasi.png)
+<img src="images/shitomasi.png  />
 Harris with cv::cornerHarris:
-!(images/harris.png)
+<img src="images/harris.png"  />
 Harris with cv::goodFeaturesToTrack:
-!(images/harris_gft.png)
+<img src="images/harris_gft.png"  />
 FAST:
-!(images/fast.png)
+<img src="images/fast.png"  />
 BRISK:
-!(images/brisk.png)
+<img src="images/brisk.png"  />
 ORB (limited to 500):
-!(images/orb500.png)
+<img src="images/orb500.png"  />
 ORB (limited to 1000):
-!(images/orb.png)
+<img src="images/orb.png"  />
 AKAZE:
-!(images/akaze.png)
+<img src="images/akaze.png"  />
 SIFT:
-!(images/sift.png)
+<img src="images/sift.png"  />
 
 
 ## MP.8 Performance Evaluation 2
