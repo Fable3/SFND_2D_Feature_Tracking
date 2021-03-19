@@ -248,7 +248,7 @@ void detKeypointsModern(vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::stri
 	}
 	else if (detectorType == "ORB")
 	{
-		detector = cv::ORB::create();
+		detector = cv::ORB::create(1000);
 	}
 	else if (detectorType == "AKAZE")
 	{

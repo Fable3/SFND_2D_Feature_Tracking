@@ -54,7 +54,7 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     deque<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
-	bool bVisDetection = true;            // visualize detection results
+	bool bVisDetection = false;            // visualize detection results
 	bool bVisMatch = false;            // visualize matching results
 
 	// for logging statistics:
@@ -143,7 +143,7 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 		t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 		cout << detectorType << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 		total_time += t;
-		if (bVisDetection && image_count==1)
+		if (bVisDetection /*&& image_count==1*/)
 		{
 			// visualize results
 			cv::Mat visImage = img.clone();
