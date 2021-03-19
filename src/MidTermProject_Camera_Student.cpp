@@ -11,8 +11,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d.hpp>
-//#include <opencv2/xfeatures2d.hpp>
-//#include <opencv2/xfeatures2d/nonfree.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/xfeatures2d/nonfree.hpp>
 
 #include "dataStructures.h"
 #include "matching2D.hpp"
@@ -73,6 +73,12 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 	{
 		average_match = 0;
 		// invalid combination: @details AKAZE descriptors can only be used with KAZE or AKAZE keypoints.
+		return;
+	}
+	if (descriptorType == "ORB" && detectorType == "SIFT")
+	{
+		average_match = 0;
+		// invalid combination: keypoint octave is too high, it'll cause memory full
 		return;
 	}
 
@@ -236,8 +242,8 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-            string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-			if (descriptorType == "SIFT") descriptorType = "DES_HOG"; // SIFT uses float
+            string matcherDescriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+			if (descriptorType == "SIFT") matcherDescriptorType = "DES_HOG"; // SIFT uses float
             string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
             //// STUDENT ASSIGNMENT
@@ -246,7 +252,7 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 			double t = (double)cv::getTickCount();
             matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                              (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
-                             matches, descriptorType, matcherType, selectorType);
+                             matches, matcherDescriptorType, matcherType, selectorType);
 			t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 			cout << matcherType << " " << selectorType << " with n=" << matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
 
@@ -315,12 +321,12 @@ int main(int argc, const char *argv[])
 	
 	//string stat_type = "keypoint_count";
 	//string stat_type = "keypoint_time";
-	//string stat_type = "neightborhood_size";
-	string stat_type = "match_count";
-	vector<string> all_detectors = { "SHITOMASI", "HARRIS", "HARRIS_GFT", "FAST", "BRISK", "ORB", "AKAZE"/*, "SIFT" */};
-	vector<string> all_descriptors = { "BRISK", /*"BRIEF",*/"ORB", /*"FREAK",*/ "AKAZE"/*, "SIFT" */};
+	string stat_type = "neightborhood_size";
+	//string stat_type = "match_count";
+	vector<string> all_detectors = { "SHITOMASI", "HARRIS", "HARRIS_GFT", "FAST", "BRISK", "ORB", "AKAZE", "SIFT" };
+	vector<string> all_descriptors = { "BRISK", "BRIEF","ORB", "FREAK", "AKAZE", "SIFT"};
 
-	/*
+	// Detector statistics
 	FILE *fLogFile;
 	fopen_s(&fLogFile, (stat_type + ".log").c_str(), "wt");
 	for (auto det : all_detectors)
@@ -328,7 +334,10 @@ int main(int argc, const char *argv[])
 		double total_time, average_match;
 		run(det, "BRISK", stat_type, total_time, average_match, fLogFile);
 	}
-	fclose(fLogFile);*/
+	fclose(fLogFile);
+
+	/*
+	// Total Time and Match count calculation for all det/desc combinations
 	FILE *fLogFile[2];
 	
 	fopen_s(&(fLogFile[0]), "avg_match.log", "wt");
@@ -363,6 +372,6 @@ int main(int argc, const char *argv[])
 		fprintf(fLogFile[1], "\n");
 	}
 	fclose(fLogFile[0]);
-	fclose(fLogFile[1]);
+	fclose(fLogFile[1]);*/
 	return 0;
 }
