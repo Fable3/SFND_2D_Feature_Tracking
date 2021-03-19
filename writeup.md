@@ -25,6 +25,10 @@ The more optimal solution is to create a separate vector for the result and only
 Similar to detection, there's a common interface for descriptors, cv::DescriptorExtractor::compute.
 Since both cv::DescriptorExtractor and cv::FeatureDetector are just typedefs to cv::Feature2D, the detector and descriptor selection could use the same code, returning Feature2D type.
 BRIEF, ORB, FREAK, AKAZE and SIFT
+There're some limitations in OpenCV:
+```
+@details AKAZE descriptors can only be used with KAZE or AKAZE keypoints.
+```
 
 ## MP.5 Descriptor Matching
 
@@ -32,6 +36,15 @@ There are 3 parameters for matching:
 - matcherType supports MAT_BF for Brute Force matching, and MAT_FLANN for FLANN based matching.
 - descriptorType can be DES_BINARY for binary descriptors and DES_HOG for float based descriptors. This is only used for BF matching, because FLANN only supports float type descriptors, and thus binary descriptors are converted to float as a workaround.
 - selectorType is either SEL_NN for nearest neighbor, or SEL_KNN (see next paragraph)
+
+From the OpenCV documentation:
+```
+@param normType One of NORM_L1, NORM_L2, NORM_HAMMING, NORM_HAMMING2. L1 and L2 norms are
+    preferable choices for SIFT and SURF descriptors, NORM_HAMMING should be used with ORB, BRISK and
+    BRIEF, NORM_HAMMING2 should be used with ORB when WTA_K==3 or 4 (see ORB::ORB constructor
+    description).
+```
+In our case, SIFT uses L2, the rest uses HAMMING.
 
 ## MP.6 Descriptor Distance Ratio
 

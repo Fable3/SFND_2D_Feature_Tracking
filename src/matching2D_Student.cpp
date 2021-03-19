@@ -9,6 +9,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 {
     // configure matcher
     bool crossCheck = true;
+	if (selectorType == "SEL_KNN") crossCheck = false; // crossCheck not supported for kNN matching in OpenCV
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
     if (matcherType.compare("MAT_BF") == 0)
@@ -68,6 +69,10 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
+	else if (descriptorType.compare("BRIEF") == 0)
+	{
+		// need contrib extractor = cv::BRIEF::create();
+	}
     else if (descriptorType.compare("ORB") == 0)
     {
 		extractor = cv::ORB::create();
@@ -241,16 +246,16 @@ void detKeypointsModern(vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::stri
 	{
 		detector = cv::BRISK::create();
 	}
-	else if (detectorType == "BRISK")
+	else if (detectorType == "ORB")
 	{
 		detector = cv::ORB::create();
 	}
 	else if (detectorType == "AKAZE")
 	{
 		detector = cv::AKAZE::create();
-	} else
+	} else if (detectorType == "SIFT")
 	{
-		//todo: AKAZE, SIFT (need contrib)
+		//todo: SIFT (need contrib)
 	}
 
 	//double t = (double)cv::getTickCount();

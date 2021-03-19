@@ -27,17 +27,17 @@ void get_response_mean_and_std(const vector<cv::KeyPoint> &keypoints, double &me
 		return;
 	}
 	double sum = 0;
-	for (auto &kp : keypoints) sum += kp.response;
+	for (auto &kp : keypoints) sum += kp.size;
 	mean = sum / keypoints.size();
 	double std_dev_square = 0;
-	for (auto &kp : keypoints) std_dev_square += (kp.response-mean)*(kp.response - mean);
-	std_deviation = sqrt(std_dev_square);
+	for (auto &kp : keypoints) std_dev_square += (kp.size-mean)*(kp.size - mean);
+	std_deviation = sqrt(std_dev_square/ keypoints.size());
 }
 
 /* MAIN PROGRAM */
-int main(int argc, const char *argv[])
-{
 
+void run(string detectorType, string descriptorType, string stat_type, double &total_time, double &average_match, FILE *fLogFile = NULL)
+{
     /* INIT VARIABLES AND DATA STRUCTURES */
 
     // data location
@@ -54,8 +54,27 @@ int main(int argc, const char *argv[])
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     deque<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
-    bool bVisDetection = true;            // visualize detection results
+	bool bVisDetection = false;            // visualize detection results
 	bool bVisMatch = false;            // visualize matching results
+
+	// for logging statistics:
+	//string stat_type = "keypoint_count";
+	vector<cv::KeyPoint> all_keypoints; // for neightborhood_size stat only
+	int total_keypoint_count = 0;
+	int total_match_count = 0;
+	double total_keypoint_time = 0;
+	total_time = 0;
+	int image_count = 0;
+	if (fLogFile)
+	{
+		fprintf(fLogFile, "%s | %s | ", detectorType.c_str(), descriptorType.c_str());
+	}
+	if (descriptorType == "AKAZE" && detectorType != "AKAZE")
+	{
+		average_match = 0;
+		// invalid combination: @details AKAZE descriptors can only be used with KAZE or AKAZE keypoints.
+		return;
+	}
 
     /* MAIN LOOP OVER ALL IMAGES */
 
@@ -90,9 +109,10 @@ int main(int argc, const char *argv[])
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
         //string detectorType = "SHITOMASI";
-		string detectorType = "FAST";
+		//string detectorType = "FAST";
 		//string detectorType = "HARRIS_GFT";
 		//string detectorType = "HARRIS";
+		//string detectorType = "BRISK";
 
         //// STUDENT ASSIGNMENT
         //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
@@ -116,9 +136,7 @@ int main(int argc, const char *argv[])
 		}
 		t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 		cout << detectorType << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
-		double resp_mean, resp_stddev;
-		get_response_mean_and_std(keypoints, resp_mean, resp_stddev);
-		cout << "mean " << resp_mean << " stddev " << resp_stddev << endl;
+		total_time += t;
 		if (bVisDetection)
 		{
 			// visualize results
@@ -148,6 +166,29 @@ int main(int argc, const char *argv[])
 			keypoints = filtered_keypoints;
         }
 
+		image_count++;
+		if (fLogFile != NULL)
+		{
+			if (stat_type == "keypoint_count")
+			{
+				fprintf(fLogFile, "%d | ", keypoints.size());
+				total_keypoint_count += keypoints.size();
+			} else if (stat_type == "neightborhood_size")
+			{
+				double resp_mean, resp_stddev;
+				get_response_mean_and_std(keypoints, resp_mean, resp_stddev);
+				cout << "mean " << resp_mean << " stddev " << resp_stddev << endl;
+
+				fprintf(fLogFile, "%.2f (%.2f) | ", resp_mean, resp_stddev);
+				all_keypoints.insert(all_keypoints.end(), keypoints.begin(), keypoints.end());
+			} else if (stat_type == "keypoint_time")
+			{
+				fprintf(fLogFile, "%.3f | ", 1000 * t);
+				total_keypoint_time += 1000 * t;
+			}
+		}
+
+
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
@@ -175,11 +216,12 @@ int main(int argc, const char *argv[])
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
         cv::Mat descriptors;
-        string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
+        //string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
 		t = (double)cv::getTickCount();
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
 		t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 		cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
+		total_time += t;
         //// EOF STUDENT ASSIGNMENT
 
         // push descriptors for current frame to end of data buffer
@@ -195,7 +237,8 @@ int main(int argc, const char *argv[])
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+			if (descriptorType == "SIFT") descriptorType = "DES_HOG"; // SIFT uses float
+            string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
@@ -206,6 +249,15 @@ int main(int argc, const char *argv[])
                              matches, descriptorType, matcherType, selectorType);
 			t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 			cout << matcherType << " " << selectorType << " with n=" << matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
+
+			if (fLogFile != NULL)
+			{
+				if (stat_type == "match_count")
+				{
+					fprintf(fLogFile, "%d | ", matches.size());
+				}
+			}
+			total_match_count += matches.size();
 
             //// EOF STUDENT ASSIGNMENT
 
@@ -234,5 +286,83 @@ int main(int argc, const char *argv[])
 
     } // eof loop over all images
 
-    return 0;
+	if (fLogFile != NULL)
+	{
+		if (stat_type == "keypoint_count")
+		{
+			fprintf(fLogFile, "%.1f\n", double(total_keypoint_count)/image_count);
+		}
+		else if (stat_type == "neightborhood_size")
+		{
+			double resp_mean, resp_stddev;
+			get_response_mean_and_std(all_keypoints, resp_mean, resp_stddev);
+			fprintf(fLogFile, "%.2f (%.2f)\n", resp_mean, resp_stddev);
+		}
+		else if (stat_type == "keypoint_time")
+		{
+			fprintf(fLogFile, "%.3f\n", total_keypoint_time/image_count);
+		}
+		else if (stat_type == "match_count")
+		{
+			fprintf(fLogFile, "%.1f\n", total_match_count / double(image_count-1));
+		}
+	}
+	average_match = total_match_count / double(image_count - 1);
+}
+
+int main(int argc, const char *argv[])
+{
+	
+	//string stat_type = "keypoint_count";
+	//string stat_type = "keypoint_time";
+	//string stat_type = "neightborhood_size";
+	string stat_type = "match_count";
+	vector<string> all_detectors = { "SHITOMASI", "HARRIS", "HARRIS_GFT", "FAST", "BRISK", "ORB", "AKAZE"/*, "SIFT" */};
+	vector<string> all_descriptors = { "BRISK", /*"BRIEF",*/"ORB", /*"FREAK",*/ "AKAZE"/*, "SIFT" */};
+
+	/*
+	FILE *fLogFile;
+	fopen_s(&fLogFile, (stat_type + ".log").c_str(), "wt");
+	for (auto det : all_detectors)
+	{
+		double total_time, average_match;
+		run(det, "BRISK", stat_type, total_time, average_match, fLogFile);
+	}
+	fclose(fLogFile);*/
+	FILE *fLogFile[2];
+	
+	fopen_s(&(fLogFile[0]), "avg_match.log", "wt");
+	fopen_s(&(fLogFile[1]), "total_time.log", "wt");
+	// headers:
+	for (int nf = 0; nf < 2; nf++)
+	{
+		FILE *f = fLogFile[nf];
+		for (auto desc : all_descriptors)
+		{
+			fprintf(f, "| %s", desc.c_str());
+		}
+		fprintf(f, "\n---");
+		for (auto desc : all_descriptors)
+		{
+			fprintf(f, "|---");
+		}
+		fprintf(f, "\n");
+	}
+	for (auto det : all_detectors)
+	{
+		fprintf(fLogFile[0], "%s ", det.c_str());
+		fprintf(fLogFile[1], "%s ", det.c_str());
+		for (auto desc : all_descriptors)
+		{
+			double total_time=0, average_match=0;
+			run(det, desc, "", total_time, average_match, NULL);
+			fprintf(fLogFile[0], "| %d", (int)average_match);
+			fprintf(fLogFile[1], "| %.3f", total_time);
+		}
+		fprintf(fLogFile[0], "\n");
+		fprintf(fLogFile[1], "\n");
+	}
+	fclose(fLogFile[0]);
+	fclose(fLogFile[1]);
+	return 0;
 }
