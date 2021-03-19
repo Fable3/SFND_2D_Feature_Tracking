@@ -98,7 +98,7 @@ AKAZE |  7.77 (3.96) | 7.49 (3.52) | 7.41 (3.50) | 7.48 (3.39) | 7.75 (3.44) | 7
 SIFT |  5.04 (5.96) | 5.09 (6.20) | 4.96 (6.09) | 4.74 (5.28) | 4.72 (5.51) | 4.65 (5.58) | 5.43 (6.53) | 4.63 (5.16) | 5.58 (6.72) | 5.67 (6.72) | 5.06 (6.01)
 
 Shi-Tomasi:
-<img src="images/shitomasi.png  />
+<img src="images/shitomasi.png"  />
 Harris with cv::cornerHarris:
 <img src="images/harris.png"  />
 Harris with cv::goodFeaturesToTrack:
