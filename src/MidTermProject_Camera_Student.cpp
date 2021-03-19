@@ -54,7 +54,7 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     deque<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
-	bool bVisDetection = false;            // visualize detection results
+	bool bVisDetection = true;            // visualize detection results
 	bool bVisMatch = false;            // visualize matching results
 
 	// for logging statistics:
@@ -143,7 +143,7 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 		t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 		cout << detectorType << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 		total_time += t;
-		if (bVisDetection)
+		if (bVisDetection && image_count==1)
 		{
 			// visualize results
 			cv::Mat visImage = img.clone();
@@ -318,60 +318,67 @@ void run(string detectorType, string descriptorType, string stat_type, double &t
 
 int main(int argc, const char *argv[])
 {
-	
 	//string stat_type = "keypoint_count";
-	//string stat_type = "keypoint_time";
-	string stat_type = "neightborhood_size";
+	string stat_type = "keypoint_time";
+	//string stat_type = "neightborhood_size";
 	//string stat_type = "match_count";
 	vector<string> all_detectors = { "SHITOMASI", "HARRIS", "HARRIS_GFT", "FAST", "BRISK", "ORB", "AKAZE", "SIFT" };
 	vector<string> all_descriptors = { "BRISK", "BRIEF","ORB", "FREAK", "AKAZE", "SIFT"};
 
-	// Detector statistics
-	FILE *fLogFile;
-	fopen_s(&fLogFile, (stat_type + ".log").c_str(), "wt");
-	for (auto det : all_detectors)
-	{
-		double total_time, average_match;
-		run(det, "BRISK", stat_type, total_time, average_match, fLogFile);
-	}
-	fclose(fLogFile);
+	bool measure_detectors = true;
+	bool measure_combinations = false;
 
-	/*
-	// Total Time and Match count calculation for all det/desc combinations
-	FILE *fLogFile[2];
+	if (measure_detectors)
+	{
+		// Detector statistics
+		FILE *fLogFile;
+		fopen_s(&fLogFile, (stat_type + ".log").c_str(), "wt");
+		for (auto det : all_detectors)
+		{
+			double total_time, average_match;
+			run(det, "BRISK", stat_type, total_time, average_match, fLogFile);
+		}
+		fclose(fLogFile);
+	}
 	
-	fopen_s(&(fLogFile[0]), "avg_match.log", "wt");
-	fopen_s(&(fLogFile[1]), "total_time.log", "wt");
-	// headers:
-	for (int nf = 0; nf < 2; nf++)
+	if (measure_combinations)
 	{
-		FILE *f = fLogFile[nf];
-		for (auto desc : all_descriptors)
+		// Total Time and Match count calculation for all det/desc combinations
+		FILE *fLogFile[2];
+
+		fopen_s(&(fLogFile[0]), "avg_match.log", "wt");
+		fopen_s(&(fLogFile[1]), "total_time.log", "wt");
+		// headers:
+		for (int nf = 0; nf < 2; nf++)
 		{
-			fprintf(f, "| %s", desc.c_str());
+			FILE *f = fLogFile[nf];
+			for (auto desc : all_descriptors)
+			{
+				fprintf(f, "| %s", desc.c_str());
+			}
+			fprintf(f, "\n---");
+			for (auto desc : all_descriptors)
+			{
+				fprintf(f, "|---");
+			}
+			fprintf(f, "\n");
 		}
-		fprintf(f, "\n---");
-		for (auto desc : all_descriptors)
+		for (auto det : all_detectors)
 		{
-			fprintf(f, "|---");
+			fprintf(fLogFile[0], "%s ", det.c_str());
+			fprintf(fLogFile[1], "%s ", det.c_str());
+			for (auto desc : all_descriptors)
+			{
+				double total_time = 0, average_match = 0;
+				run(det, desc, "", total_time, average_match, NULL);
+				fprintf(fLogFile[0], "| %d", (int)average_match);
+				fprintf(fLogFile[1], "| %.3f", total_time);
+			}
+			fprintf(fLogFile[0], "\n");
+			fprintf(fLogFile[1], "\n");
 		}
-		fprintf(f, "\n");
+		fclose(fLogFile[0]);
+		fclose(fLogFile[1]);
 	}
-	for (auto det : all_detectors)
-	{
-		fprintf(fLogFile[0], "%s ", det.c_str());
-		fprintf(fLogFile[1], "%s ", det.c_str());
-		for (auto desc : all_descriptors)
-		{
-			double total_time=0, average_match=0;
-			run(det, desc, "", total_time, average_match, NULL);
-			fprintf(fLogFile[0], "| %d", (int)average_match);
-			fprintf(fLogFile[1], "| %.3f", total_time);
-		}
-		fprintf(fLogFile[0], "\n");
-		fprintf(fLogFile[1], "\n");
-	}
-	fclose(fLogFile[0]);
-	fclose(fLogFile[1]);*/
 	return 0;
 }
