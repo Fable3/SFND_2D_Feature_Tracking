@@ -57,12 +57,6 @@ If selectorType is SEL_KNN, the knnMatch will be used with k=2. This is for a mo
 
 ## MP.7 Performance Evaluation 1
 
-table test:
-Markdown | Less | Pretty
---- | --- | ---
-*Still* | `renders` | **nicely**
-1 | 2 | 3
-
 Number of keypoints detected on preceding car:
 (ORB is limited by parameter)
 
@@ -108,7 +102,7 @@ SIFT |  5.04 (5.96) | 5.09 (6.20) | 4.96 (6.09) | 4.74 (5.28) | 4.72 (5.51) | 4.
 
 Average number of matching points on preceding car for all detector + descriptor combinations:
 
-| BRISK| BRIEF| ORB| FREAK| AKAZE| SIFT
+det\desc| BRISK| BRIEF| ORB| FREAK| AKAZE| SIFT
 ---|---|---|---|---|---|---
 SHITOMASI | 85| 104| 100| 85| 0| 103
 HARRIS | 15| 18| 17| 15| 0| 17
@@ -125,7 +119,7 @@ I've highlighted the 2 best options considering time as well.
 
 Total time for detection on 10 images and matching on consecutive pairs (9 total) in milliseconds:
 
-| BRISK| BRIEF| ORB| FREAK| AKAZE| SIFT
+det\desc| BRISK| BRIEF| ORB| FREAK| AKAZE| SIFT
 ---|---|---|---|---|---|---
 SHITOMASI | 2.131| 0.128| 0.129| 0.399| 0.000| 0.261
 HARRIS | 2.117| 0.118| 0.119| 0.387| 0.000| 0.265
